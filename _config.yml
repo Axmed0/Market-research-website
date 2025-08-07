@@ -1,19 +1,16 @@
-title: “Your Name – Market Insights”
-baseurl: “”         # leave blank if at root
-url: “https://yourdomain.com”
-
-# add your new “collections” if you like, or just use pages:
-collections: []
-
-# Navigation
+title: "Your Name – Market Insights"
+baseurl: ""
+url: "https://axmed0.github.io/Market-research-website/"
+  
+# navigation items used by your layout
 nav:
-  - title: “Home”
+  - title: "Home"
     url: /
-  - title: “Market Knowledge”
+  - title: "Market Knowledge"
     url: /market-knowledge/
-  - title: “Equity Research”
+  - title: "Equity Research"
     url: /equity-research/
-  - title: “About”
+  - title: "About"
     url: /about/
-  - title: “Contact”
+  - title: "Contact"
     url: /contact/
