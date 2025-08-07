@@ -1,0 +1,19 @@
+title: “Your Name – Market Insights”
+baseurl: “”         # leave blank if at root
+url: “https://yourdomain.com”
+
+# add your new “collections” if you like, or just use pages:
+collections: []
+
+# Navigation
+nav:
+  - title: “Home”
+    url: /
+  - title: “Market Knowledge”
+    url: /market-knowledge/
+  - title: “Equity Research”
+    url: /equity-research/
+  - title: “About”
+    url: /about/
+  - title: “Contact”
+    url: /contact/
