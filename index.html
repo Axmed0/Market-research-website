@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Name – Market Insights</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="market-knowledge.html">Market Knowledge</a></li>
+        <li><a href="equity-research.html">Equity Research</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Welcome to My Site!</h1>
+    <p>This is my first website hosted with GitHub Pages!</p>
+  </main>
+
+  <footer>
+    <p>© 2025 Your Name – Market Insights.</p>
+  </footer>
+
+  <!-- EMAIL SUBSCRIPTION POP-UP -->
+  <div id="email-popup" class="popup hidden">
+    <div class="popup-content">
+      <button id="close-popup">×</button>
+      <h2>Subscribe for updates</h2>
+      <form action="https://YOUR-MC-URL" method="post" target="_blank">
+        <input type="email" name="EMAIL" placeholder="Your email" required>
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // show after 5s
+    setTimeout(()=>{
+      document.getElementById('email-popup').classList.remove('hidden');
+    }, 5000);
+    document.getElementById('close-popup').onclick = ()=>
+      document.getElementById('email-popup').classList.add('hidden');
+  </script>
+</body>
+</html>
