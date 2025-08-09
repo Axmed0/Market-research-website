@@ -1,0 +1,54 @@
+[
+  {
+    "slug": "opec-demand-outlook-steady",
+    "title": "OPEC+ Signals Steady Output as Demand Firms",
+    "category": "energy",
+    "tags": [
+      "Energy",
+      "Crude"
+    ],
+    "date": "2025-08-07",
+    "image": "https://picsum.photos/640/360?random=301",
+    "summary": "Producers hold steady into Q4 as refinery runs lift seaborne crude flows.",
+    "content_html": "<p>OPEC+ delegates indicated a steady approach into the winter maintenance period. Refinery runs have lifted seaborne flows while physical differentials firm in the Atlantic basin.</p><p>Backwardation narrowed and the curve flattened as prompt demand improved.</p>"
+  },
+  {
+    "slug": "aluminum-spreads-tighten",
+    "title": "Smelter Curbs Tighten Global Aluminium Spreads",
+    "category": "metals",
+    "tags": [
+      "Metals",
+      "Aluminium"
+    ],
+    "date": "2025-08-06",
+    "image": "https://picsum.photos/640/360?random=302",
+    "summary": "Power constraints reduce output and widen premia in Europe and Asia.",
+    "content_html": "<p>Rolling power constraints continue to limit smelter output, pushing spot premia higher. Downstream demand remains resilient despite price volatility.</p>"
+  },
+  {
+    "slug": "corn-weather-volatility",
+    "title": "Weather Swings Drive Volatility in Corn",
+    "category": "agri",
+    "tags": [
+      "Agriculture",
+      "Grains"
+    ],
+    "date": "2025-08-05",
+    "image": "https://picsum.photos/640/360?random=303",
+    "summary": "Yield uncertainty rises as forecasts flip between heat and storms.",
+    "content_html": "<p>Weather models turned mixed week-on-week, lifting realized volatility across corn options. End-users continue to hedge new-crop exposure amid basis moves.</p>"
+  },
+  {
+    "slug": "eu-ets-q4-skew",
+    "title": "EU ETS: Options Skew Hints at Tighter Q4",
+    "category": "power",
+    "tags": [
+      "Power",
+      "Carbon"
+    ],
+    "date": "2025-08-03",
+    "image": "https://picsum.photos/640/360?random=304",
+    "summary": "Risk reversals price in upside into year-end amid supply adjustments.",
+    "content_html": "<p>Positioning in the options market shows a mild upside skew, reflecting expectations for tighter balances into Q4.</p>"
+  }
+]
