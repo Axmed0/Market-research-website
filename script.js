@@ -1,257 +1,287 @@
-// ===== Helper utilities =====
-const qs = sel => document.querySelector(sel);
-const qsa = sel => Array.from(document.querySelectorAll(sel));
+(function(){
+  const $ = (s)=>document.querySelector(s);
+  const qsa = (s)=>Array.from(document.querySelectorAll(s));
+  const page = document.body.dataset.page;
+  const year = document.getElementById('year'); if (year) year.textContent = new Date().getFullYear();
 
-function setBodyScrollLocked(locked){ document.body.style.overflow = locked ? 'hidden' : ''; }
+  // ---- Mode detection
+  window.LUMORA = window.LUMORA || {};
+  LUMORA.firebaseConfig = LUMORA.firebaseConfig || {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  const hasFirebase = LUMORA.firebaseConfig.apiKey && LUMORA.firebaseConfig.apiKey !== "YOUR_API_KEY";
 
-function getQueryParam(key){
-  const url = new URL(window.location.href);
-  return url.searchParams.get(key);
-}
+  let auth=null, db=null, storage=null;
+  LUMORA.mode = hasFirebase ? 'firebase' : 'static';
+  LUMORA.isWriter = false;
+  LUMORA.user = null;
 
-async function loadArticles(){
-  const res = await fetch('data/articles.json', {cache:'no-store'});
-  return await res.json();
-}
-
-function articleCard(a){
-  return `
-  <div class="col-12 col-md-6 col-lg-4" data-category="${a.category}">
-    <article class="card h-100 card-raise">
-      <img src="${a.image}" class="card-img-top" alt="${a.title}">
-      <div class="card-body">
-        <div class="d-flex gap-2 mb-2">
-          ${(a.tags||[]).map(t => `<span class="badge text-bg-primary-soft">${t}</span>`).join('')}
-        </div>
-        <h3 class="h5 card-title"><a href="article.html?slug=${encodeURIComponent(a.slug)}" class="stretched-link text-decoration-none">${a.title}</a></h3>
-        <p class="card-text text-muted small mb-0">Published ${a.date}</p>
+  function renderList(items){
+    const grid = $('#listGrid'); if (!grid) return;
+    const s = ($('#search')?.value || '').toLowerCase();
+    const filtered = items.filter(a => (a.title||'').toLowerCase().includes(s) || (a.summary||'').toLowerCase().includes(s) || (a.tags||[]).join(' ').toLowerCase().includes(s));
+    grid.innerHTML = filtered.map(a => `
+      <div class="col-12">
+        <article class="card p-4">
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div>
+              <div class="small-muted mb-1">${(a.tags||[]).map(t=>`<span class="badge-soft me-1">${t}</span>`).join('')}</div>
+              <h3 class="h5 m-0"><a class="text-plain" href="article.html?slug=${encodeURIComponent(a.slug)}">${a.title}</a></h3>
+              <div class="small-muted">${a.date}</div>
+              <p class="small-muted mt-2 mb-0">${a.summary||''}</p>
+            </div>
+            <div><a class="btn btn-outline btn-pill" href="article.html?slug=${encodeURIComponent(a.slug)}">Open</a></div>
+          </div>
+        </article>
       </div>
-    </article>
-  </div>`;
-}
-
-function renderArticles(list, {category='all', query=''} = {}){
-  let filtered = list.slice();
-  if (category !== 'all') filtered = filtered.filter(a => a.category === category);
-  if (query){
-    const q = query.toLowerCase();
-    filtered = filtered.filter(a =>
-      a.title.toLowerCase().includes(q) ||
-      (a.summary||'').toLowerCase().includes(q) ||
-      (a.tags||[]).join(' ').toLowerCase().includes(q)
-    );
+    `).join('') || `<div class="small-muted">No articles yet.</div>`;
   }
-  const grid = qs('#insightsGrid');
-  if (!grid) return;
-  grid.innerHTML = filtered.map(articleCard).join('') || `<div class="text-center text-muted">No results found.</div>`;
-}
 
-// ===== Header: search redirect =====
-function initHeaderSearch(){
-  const form = qs('#headerSearch');
-  if (!form) return;
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const q = (new FormData(form)).get('q') || '';
-    window.location.href = 'insights.html?q=' + encodeURIComponent(q);
-  });
-}
+  function renderArticle(a){
+    const c = $('#articleContainer'); if (!c) return;
+    document.title = `Lumora — ${a.title}`;
+    c.innerHTML = `
+      <div class="container container-narrow">
+        <div class="kicker mb-2">${a.type === 'equity' ? 'Equity Research' : 'Market Insights'}</div>
+        <h1 class="mb-2">${a.title}</h1>
+        <div class="small-muted mb-3">${a.date} · ${(a.tags||[]).join(', ')}</div>
+        <div class="lead">${a.summary||''}</div>
+        <hr class="my-4">
+        <div>${a.content_html || a.contentHtml || ''}</div>
+        <div class="mt-4"><a class="btn btn-outline btn-pill" href="${a.type==='equity'?'equity.html':'insights.html'}">Back</a></div>
+      </div>`;
+  }
 
-// ===== Mobile menu =====
-function initMobileMenu(){
-  const toggle = qs('#menuToggle'), closeBtn = qs('#menuClose'), menu = qs('#mobileMenu');
-  if (!menu) return;
-  function close(){ menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); setBodyScrollLocked(false); toggle?.setAttribute('aria-expanded','false'); }
-  function open(){ menu.classList.add('show'); menu.setAttribute('aria-hidden','false'); setBodyScrollLocked(true); toggle?.setAttribute('aria-expanded','true'); }
-  toggle?.addEventListener('click', open);
-  closeBtn?.addEventListener('click', close);
-  menu.addEventListener('click', (e)=>{ if (e.target === menu) close(); });
-  qsa('#mobileMenu a.mobile-link').forEach(a => a.addEventListener('click', close));
-}
+  // -------- Static mode --------
+  async function staticList(type){
+    const r = await fetch('data/articles.json', {cache:'no-store'});
+    const all = await r.json();
+    const items = all.filter(a => a.type === type);
+    renderList(items);
+    $('#search')?.addEventListener('input', ()=>renderList(items));
+  }
+  async function staticArticle(){
+    const slug = new URL(location.href).searchParams.get('slug');
+    const r = await fetch('data/articles.json', {cache:'no-store'});
+    const all = await r.json();
+    const a = all.find(x => x.slug === slug);
+    if (!a){ $('#articleContainer').innerHTML='<div class="container container-narrow"><div class="alert alert-warning">Article not found.</div></div>'; return; }
+    renderArticle(a);
+  }
+  function staticContact(){
+    const form = $('#contactForm'), thanks = $('#contactThanks');
+    form?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      // store locally for now
+      const arr = JSON.parse(localStorage.getItem('contactMsgs')||'[]');
+      arr.push(Object.fromEntries(new FormData(form).entries()));
+      localStorage.setItem('contactMsgs', JSON.stringify(arr));
+      form.reset(); thanks.classList.remove('hidden');
+    });
+  }
+  function staticLoginGuard(){
+    if (page==='login' || page==='dashboard' || page==='editor'){
+      $('#authError')?.classList.remove('hidden');
+      $('#authError').textContent = 'Login is disabled in static mode. Add Firebase config in script.js to enable.';
+      $('#modeWarn')?.classList.remove('hidden');
+    }
+  }
 
-// ===== Newsletter storage + CSV export =====
-function initNewsletter(){
-  const form = qs('#newsletterForm');
-  const exportBtn = qs('#exportSubscribers');
-  if (form){
-    form.addEventListener('submit', (e)=>{
+  // -------- Firebase mode --------
+  async function initFirebase(){
+    if (!hasFirebase) return;
+    firebase.initializeApp(LUMORA.firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    storage = firebase.storage();
+
+    function updateNav(user){
+      const navLogin = document.getElementById('navLogin');
+      const navLogout = document.getElementById('navLogout');
+      const navDash = document.getElementById('navDashboard');
+      if (user){
+        navLogin?.classList.add('hidden');
+        navLogout?.classList.remove('hidden');
+        if (LUMORA.isWriter) navDash?.classList.remove('hidden');
+      } else {
+        navLogin?.classList.remove('hidden');
+        navLogout?.classList.add('hidden');
+        navDash?.classList.add('hidden');
+      }
+    }
+    async function fetchRole(uid){
+      try{
+        const doc = await db.collection('users').doc(uid).get();
+        LUMORA.isWriter = !!(doc.exists && doc.data().role === 'writer');
+      }catch(e){ LUMORA.isWriter = False; }
+    }
+
+    auth.onAuthStateChanged(async (user)=>{
+      LUMORA.user = user;
+      if (user) await fetchRole(user.uid);
+      updateNav(user);
+      runPage();
+    });
+    LUMORA.authLogout = () => auth.signOut();
+  }
+
+  async function fbList(type){
+    const grid = $('#listGrid'), search = $('#search');
+    let snap = await db.collection('articles').where('type','==',type).where('published','==',true).orderBy('date','desc').get();
+    let items = snap.docs.map(d => ({id:d.id, ...d.data(), date:(d.data().date?.toDate?.()||new Date()).toISOString().slice(0,10)}));
+    const render = (q='')=>{
+      const s = q.toLowerCase();
+      const f = items.filter(a => (a.title||'').toLowerCase().includes(s) || (a.summary||'').toLowerCase().includes(s) || (a.tags||[]).join(' ').toLowerCase().includes(s));
+      renderList(f);
+    };
+    render('');
+    search?.addEventListener('input', e => render(e.target.value));
+  }
+
+  async function fbArticle(){
+    const slug = new URL(location.href).searchParams.get('slug');
+    const q = await db.collection('articles').where('slug','==',slug).limit(1).get();
+    if (q.empty){ $('#articleContainer').innerHTML='<div class="container container-narrow"><div class="alert alert-warning">Article not found.</div></div>'; return; }
+    const a = q.docs[0].data();
+    a.date = (a.date?.toDate?.()||new Date()).toISOString().slice(0,10);
+    renderArticle(a);
+  }
+
+  function fbContact(){
+    const form = $('#contactForm'), thanks = $('#contactThanks');
+    form?.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const data = Object.fromEntries(new FormData(form).entries());
-      const arr = JSON.parse(localStorage.getItem('newsletterSubscribers') || '[]');
-      arr.push({...data, ts: new Date().toISOString()});
-      localStorage.setItem('newsletterSubscribers', JSON.stringify(arr));
-      qs('#newsletterThanks')?.classList.remove('d-none');
-      form.reset();
+      data.ts = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('contactMessages').add(data);
+      form.reset(); thanks.classList.remove('hidden');
     });
   }
-  if (exportBtn){
-    exportBtn.addEventListener('click', ()=>{
-      const arr = JSON.parse(localStorage.getItem('newsletterSubscribers') || '[]');
-      const header = ['firstName','lastName','email','ts'];
-      const rows = [header.join(',')].concat(arr.map(o => header.map(k => (o[k]||'').toString().replace(/,/g,' ')).join(',')));
-      const blob = new Blob([rows.join('\n')], {type:'text/csv'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'newsletter-subscribers.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
+
+  function fbLogin(){
+    const form = $('#loginForm'), err = $('#authError');
+    $('#goSignup')?.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const email = prompt('Enter email for writer account:');
+      const pass = prompt('Enter password:');
+      if (!email || !pass) return;
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then(async cred => {
+          await db.collection('users').doc(cred.user.uid).set({ email, role:'reader', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          alert('Account created. Ask admin to set role to writer.');
+        }).catch(e => { err.classList.remove('hidden'); err.textContent = e.message; });
+    });
+    form?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const {email, password} = Object.fromEntries(new FormData(form).entries());
+      auth.signInWithEmailAndPassword(email, password).then(()=>{
+        location.href = 'dashboard.html';
+      }).catch(e => { err.classList.remove('hidden'); err.textContent = e.message; });
     });
   }
-}
 
-// ===== Experts form: stepper + mailto + JSON receipt =====
-function initExperts(){
-  const form = qs('#expertsForm');
-  const step2 = qs('#expertsStep2');
-  const next = qs('#expertsNext');
-  const back = qs('#expertsBack');
-  const submit = qs('#expertsSubmit');
-  const thanks = qs('#expertsThanks');
-  const dl = qs('#expertsDownload');
-  const emailBtn = qs('#expertsEmail');
-
-  function validate(){
-    let ok = true;
-    qsa('#expertsForm input[required]').forEach(inp=>{
-      if(!inp.value.trim()){ inp.classList.add('is-invalid'); ok=false; } else { inp.classList.remove('is-invalid'); }
-    });
-    const email = qs('#email');
-    if (email && !/^\S+@\S+\.\S+$/.test(email.value)){ email.classList.add('is-invalid'); ok=false; }
-    return ok;
+  async function fbDashboard(){
+    if (!LUMORA.user){ location.href='login.html?next=dashboard.html'; return; }
+    const warn = $('#modeWarn'); warn?.classList.add('hidden');
+    const list = $('#myArticles'); const empty = $('#empty');
+    const q = await db.collection('articles').where('authorId','==',LUMORA.user.uid).orderBy('date','desc').get();
+    const items = q.docs.map(d=>({id:d.id, ...d.data(), date:(d.data().date?.toDate?.()||new Date()).toISOString().slice(0,10)}));
+    if (!items.length){ empty.classList.remove('hidden'); }
+    list.innerHTML = items.map(a => `
+      <tr>
+        <td><a class="text-plain" href="editor.html?id=${a.id}">${a.title}</a></td>
+        <td>${a.type}</td>
+        <td>${a.date}</td>
+        <td>${a.published ? 'Yes' : 'No'}</td>
+        <td>
+          <a class="btn btn-sm btn-outline me-1" href="editor.html?id=${a.id}">Edit</a>
+          <a class="btn btn-sm btn-outline" href="article.html?slug=${encodeURIComponent(a.slug)}" target="_blank">View</a>
+        </td>
+      </tr>
+    `).join('');
   }
 
-  next?.addEventListener('click', ()=>{
-    if (!validate()) return;
-    form.classList.add('d-none');
-    step2.classList.remove('d-none');
-  });
-  back?.addEventListener('click', ()=>{
-    step2.classList.add('d-none');
-    form.classList.remove('d-none');
-  });
-  submit?.addEventListener('click', ()=>{
-    // collect data
-    const step1 = Object.fromEntries(new FormData(form).entries());
-    const step2Data = { details: (qs('#expertsDetails')?.value || '').trim() };
-    const record = {...step1, ...step2Data, ts:new Date().toISOString()};
+  async function fbEditor(){
+    if (!LUMORA.user){ location.href='login.html?next=editor.html'; return; }
+    const warn = $('#modeWarn'); warn?.classList.add('hidden');
+    const params = new URL(location.href).searchParams;
+    const id = params.get('id');
+    const form = $('#editForm');
+    const delBtn = $('#deleteBtn');
 
-    // store
-    const arr = JSON.parse(localStorage.getItem('expertLeads') || '[]');
-    arr.push(record);
-    localStorage.setItem('expertLeads', JSON.stringify(arr));
-
-    // show thanks
-    step2.classList.add('d-none');
-    thanks.classList.remove('d-none');
-
-    // setup email button
-    if (emailBtn){
-      const subject = encodeURIComponent('Lumora enquiry from ' + (record.firstName||''));
-      const body = encodeURIComponent(`Name: ${record.firstName||''} ${record.lastName||''}\nEmail: ${record.email||''}\nPhone: ${record.phone||''}\n\nDetails:\n${record.details||''}`);
-      emailBtn.href = `mailto:hello@example.com?subject=${subject}&body=${body}`;
+    let ref = null, data={};
+    if (id){
+      ref = db.collection('articles').doc(id);
+      const doc = await ref.get();
+      if (doc.exists) data = doc.data();
     }
 
-    // setup download
-    if (dl){
-      const blob = new Blob([JSON.stringify(record,null,2)], {type:'application/json'});
-      dl.href = URL.createObjectURL(blob);
-      dl.download = `lead-${Date.now()}.json`;
-    }
-  });
-}
+    // Fill form
+    if (data.title) $('#title').value = data.title;
+    if (data.slug) $('#slug').value = data.slug;
+    $('#type').value = data.type || 'insights';
+    $('#tags').value = (data.tags||[]).join(', ');
+    $('#summary').value = data.summary || '';
+    $('#contentHtml').value = data.contentHtml || '';
+    $('#published').checked = !!data.published;
 
-// ===== Login (localStorage fake login) =====
-function initLogin(){
-  const loginForm = qs('#loginForm');
-  const logoutBtn = qs('#logoutBtn');
-  const status = qs('#loginStatus');
+    // Save
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const vals = Object.fromEntries(new FormData(form).entries());
+      const payload = {
+        title: vals.title.trim(),
+        type: vals.type,
+        slug: (vals.slug||vals.title).trim().toLowerCase().replace(/\s+/g,'-'),
+        tags: (vals.tags||'').split(',').map(s=>s.trim()).filter(Boolean),
+        summary: vals.summary.trim(),
+        contentHtml: vals.contentHtml,
+        published: vals.published === 'on',
+        authorId: LUMORA.user.uid,
+        authorEmail: LUMORA.user.email,
+        date: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if (ref){ await ref.update(payload); }
+      else{
+        const exists = await db.collection('articles').where('slug','==',payload.slug).limit(1).get();
+        if (!exists.empty){ alert('Slug exists. Choose another.'); return; }
+        ref = await db.collection('articles').add(payload);
+      }
+      location.href='dashboard.html';
+    });
 
-  function updateStatus(){
-    const user = JSON.parse(localStorage.getItem('lumoraUser') || 'null');
-    if (status){
-      status.textContent = user ? `Logged in as ${user.email}` : 'Not logged in';
+    // Delete
+    delBtn?.addEventListener('click', async ()=>{
+      if (ref && confirm('Delete this article?')){
+        await ref.delete();
+        location.href='dashboard.html';
+      }
+    });
+  }
+
+  // -------- Router --------
+  function runPage(){
+    if (LUMORA.mode === 'static'){
+      if (page==='insights') staticList('insights');
+      if (page==='equity') staticList('equity');
+      if (page==='article') staticArticle();
+      if (page==='contact') staticContact();
+      staticLoginGuard();
+    } else {
+      if (page==='insights') fbList('insights');
+      if (page==='equity') fbList('equity');
+      if (page==='article') fbArticle();
+      if (page==='contact') fbContact();
+      if (page==='login') fbLogin();
+      if (page==='dashboard') fbDashboard();
+      if (page==='editor') fbEditor();
     }
   }
 
-  loginForm?.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(loginForm).entries());
-    localStorage.setItem('lumoraUser', JSON.stringify({email:data.email, ts:new Date().toISOString()}));
-    updateStatus();
-    alert('Logged in (locally).');
-  });
-  logoutBtn?.addEventListener('click', ()=>{
-    localStorage.removeItem('lumoraUser'); updateStatus(); alert('Logged out.');
-  });
-
-  updateStatus();
-}
-
-// ===== Insights page logic =====
-async function initInsightsPage(){
-  const isInsights = /insights\.html$/.test(location.pathname) || qs('#insightsGrid');
-  if (!isInsights) return;
-  const list = await loadArticles();
-  const q = getQueryParam('q') || '';
-  const cat = getQueryParam('cat') || 'all';
-  renderArticles(list, {category:cat, query:q});
-
-  // tabs
-  qsa('.insights-tabs .nav-link').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      qsa('.insights-tabs .nav-link').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      renderArticles(list, {category: btn.getAttribute('data-category'), query: qs('#searchInsights')?.value || ''});
-    });
-  });
-
-  // search box
-  qs('#searchInsights')?.addEventListener('input', (e)=>{
-    const active = qsa('.insights-tabs .nav-link').find(b=>b.classList.contains('active'));
-    const cat = active ? active.getAttribute('data-category') : 'all';
-    renderArticles(list, {category:cat, query:e.target.value});
-  });
-}
-
-// ===== Article page =====
-async function initArticlePage(){
-  if (!/article\.html$/.test(location.pathname)) return;
-  const slug = getQueryParam('slug');
-  const list = await loadArticles();
-  const article = list.find(a => a.slug === slug);
-  const container = qs('#articleContainer');
-  if (!article){ container.innerHTML = '<div class="alert alert-warning">Article not found.</div>'; return; }
-  document.title = 'Lumora — ' + article.title;
-  container.innerHTML = `
-    <div class="container">
-      <nav class="mb-3"><a href="insights.html" class="link-arrow">&larr; Back to Market Insights</a></nav>
-      <h1 class="mb-2">${article.title}</h1>
-      <div class="text-muted mb-3">${article.date} • ${article.tags.join(', ')}</div>
-      <img src="${article.image}" class="img-fluid rounded mb-4" alt="${article.title}">
-      <div class="lead">${article.summary}</div>
-      <hr class="my-4"/>
-      <div>${article.content_html}</div>
-    </div>`;
-}
-
-// ===== Index page: populate featured insights =====
-async function initIndexPage(){
-  if (!/index\.html$/.test(location.pathname)) return;
-  const grid = qs('#insightsGrid'); if (!grid) return;
-  const list = await loadArticles();
-  renderArticles(list, {category:'all', query:''});
-}
-
-// ===== Boot =====
-window.addEventListener('DOMContentLoaded', ()=>{
-  initHeaderSearch();
-  initMobileMenu();
-  initNewsletter();
-  initExperts();
-  initLogin();
-  initInsightsPage();
-  initArticlePage();
-  initIndexPage();
-  // year
-  const y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
-});
+  if (hasFirebase) { initFirebase(); } else { runPage(); }
+})();

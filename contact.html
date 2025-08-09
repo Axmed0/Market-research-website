@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Lumora — Login</title>
+  <title>Lumora — Contact</title>
   
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -15,7 +15,7 @@
   <script defer src="script.js"></script>
 
 </head>
-<body data-page="login">
+<body data-page="contact">
 
   <header class="navbar navbar-expand-lg fixed-top py-3">
     <div class="container">
@@ -38,26 +38,31 @@
 
 <main class="section">
 <div class="container container-narrow">
-  <h1 class="section-title mb-3">Writer Login</h1>
-  <div id="authError" class="alert alert-danger hidden"></div>
-  <div class="card p-4">
-    <ul class="small-muted mb-3">
-      <li>In <strong>static mode</strong>, login is disabled (no backend).</li>
-      <li>Paste your Firebase config into <code>script.js</code> to enable Auth.</li>
-    </ul>
-    <form id="loginForm">
-      <div class="mb-3">
+  <h1 class="section-title mb-3">Contact</h1>
+  <form id="contactForm" class="card p-4">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">First name</label>
+        <input name="firstName" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Last name</label>
+        <input name="lastName" class="form-control" required>
+      </div>
+      <div class="col-md-6">
         <label class="form-label">Email</label>
         <input name="email" type="email" class="form-control" required>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input name="password" type="password" class="form-control" required>
+      <div class="col-12">
+        <label class="form-label">Message</label>
+        <textarea name="message" class="form-control" rows="4" required></textarea>
       </div>
-      <button class="btn btn-primary btn-pill" type="submit">Sign in</button>
-      <a class="btn btn-outline btn-pill ms-2" href="#" id="goSignup">Create account</a>
-    </form>
-  </div>
+      <div class="col-12 d-flex justify-content-end">
+        <button class="btn btn-primary btn-pill" type="submit">Send</button>
+      </div>
+      <div id="contactThanks" class="alert alert-success mt-3 hidden">Thanks — we’ve received your message.</div>
+    </div>
+  </form>
 </div>
 </main>
 
