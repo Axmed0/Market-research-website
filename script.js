@@ -3,7 +3,7 @@
   const page = document.body.dataset.page;
   const yearEl = $('#year'); if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-  function formatDate(iso){
+  function fmtDate(iso){
     try{ return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'2-digit'});}catch(e){return iso;}
   }
   async function fetchJSON(url){
@@ -12,47 +12,70 @@
     return await res.json();
   }
 
-  async function fetchAndRenderArticles(){
-    const container = $('#articles-container');
+  // Render a list of items into a container
+  function renderList(containerSel, items, emptyText){
+    const el = $(containerSel);
+    if(!el) return;
+    if(!items.length){
+      el.innerHTML = `<div class="item"><p class="summary">${emptyText}</p></div>`;
+      return;
+    }
+    el.innerHTML = items.map(a => {
+      const href = `article.html?slug=${encodeURIComponent(a.slug)}`;
+      return `<div class="item">
+        <p class="date">${fmtDate(a.date)}</p>
+        <h3 class="title"><a href="${href}">${a.title}</a></h3>
+        <p class="summary">${a.summary || ""}</p>
+      </div>`;
+    }).join('');
+  }
+
+  async function initHome(){
     try{
-      const items = await fetchJSON('content.json');
-      items.sort((a,b)=>new Date(b.date)-new Date(a.date));
-      container.innerHTML = items.map(a => {
-        const href = `article.html?slug=${encodeURIComponent(a.slug)}`;
-        return `<div class='article-item'>
-          <h3><a href='${href}'>${a.title}</a></h3>
-          <p>${a.category} • ${formatDate(a.date)}</p>
-        </div>`;
-      }).join('');
+      const all = await fetchJSON('content.json');
+      // sort newest first
+      all.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const market = all.filter(a => a.category === 'Market Insights');
+      const equity = all.filter(a => a.category === 'Equity Research');
+      const trade  = all.filter(a => a.category === 'Trade Ideas');
+
+      renderList('#market-insights-list', market, 'No recent research available in this category.');
+      renderList('#equity-research-list', equity, 'No recent research available in this category.');
+      renderList('#trade-ideas-list', trade, 'No recent research available in this category.');
     }catch(e){
-      container.innerHTML = `<div class='article-item'><h3>No articles yet</h3><p>Publish via /admin to populate this list.</p></div>`;
       console.error(e);
+      ['#market-insights-list','#equity-research-list','#trade-ideas-list'].forEach(sel=>{
+        const el = $(sel); if(el) el.innerHTML = `<div class="item"><p class="summary">Content unavailable. Please check again later.</p></div>`;
+      });
     }
   }
 
-  async function fetchAndRenderArticle(){
+  async function initArticle(){
     const params = new URL(location.href).searchParams;
     const slug = params.get('slug');
     const titleEl = $('#article-title'), metaEl = $('#article-meta'), bodyEl = $('#article-body');
     if(!slug){ titleEl.textContent='Article not found'; return; }
+
     try{
-      const items = await fetchJSON('content.json');
-      const found = items.find(a => a.slug === slug);
-      if(!found) throw new Error('Slug not found');
+      const list = await fetchJSON('content.json');
+      const found = list.find(a => a.slug === slug);
+      if(!found) throw new Error('Slug not in content.json');
+      document.title = `Lumora — ${found.title}`;
       titleEl.textContent = found.title;
-      metaEl.textContent = `${found.category} • ${formatDate(found.date)}`;
+      metaEl.textContent = `${found.category} • ${fmtDate(found.date)}`;
+
       const md = await fetch(found.path, {cache:'no-store'}).then(r=>r.text());
       bodyEl.innerHTML = window.marked ? marked.parse(md) : md;
     }catch(e){
+      console.error(e);
       titleEl.textContent = 'Article not available';
       metaEl.textContent = '';
       bodyEl.innerHTML = '<p>Try again later.</p>';
-      console.error(e);
     }
   }
 
-  document.addEventListener('DOMContentLoaded',()=>{
-    if(page==='home') fetchAndRenderArticles();
-    if(page==='article') fetchAndRenderArticle();
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(page==='home') initHome();
+    if(page==='article') initArticle();
   });
 })();

@@ -3,28 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lumora — Market Insights</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <title>Lumora — Financial Insights</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
   <script defer src="script.js"></script>
 </head>
 <body data-page="home">
+  <!-- Header -->
   <header class="site-header">
     <div class="container">
       <div class="header-row">
-        <a class="brand" href="index.html">Lumora</a>
-        <nav class="nav">
-          <a class="link" href="mailto:contact@yourdomain.com">Contact Us</a>
-        </nav>
+        <a class="brand" href="index.html" aria-label="Lumora Home">Lumora</a>
+        <nav class="nav"><a class="link" href="mailto:contact@yourdomain.com">Contact Us</a></nav>
       </div>
     </div>
   </header>
 
+  <!-- Main -->
   <main class="container">
-    <h1 class="page-title">Market Insights</h1>
-    <div id="articles-container" class="articles"></div>
+    <!-- Market Insights -->
+    <section class="category-block">
+      <h2 class="section-title">Market Insights</h2>
+      <div id="market-insights-list" class="list"></div>
+    </section>
+
+    <!-- Equity Research -->
+    <section class="category-block">
+      <h2 class="section-title">Equity Research</h2>
+      <div id="equity-research-list" class="list"></div>
+    </section>
+
+    <!-- Trade Ideas -->
+    <section class="category-block">
+      <h2 class="section-title">Trade Ideas</h2>
+      <div id="trade-ideas-list" class="list"></div>
+    </section>
   </main>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="container">
       <small>© <span id="year"></span> Lumora</small>

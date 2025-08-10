@@ -1,13 +1,15 @@
 backend:
+  # Option A (easiest): host on Netlify with Identity + Git Gateway
   name: git-gateway
   branch: main
-# For GitHub-only deployment, switch to:
-# backend:
-#   name: github
-#   repo: your-github-username/your-repo-name
-#   branch: main
+
+  # Option B (GitHub-only):
+  # name: github
+  # repo: your-github-username/your-repo-name
+  # branch: main
 
 publish_mode: editorial_workflow
+
 media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
@@ -21,5 +23,6 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Publish Date", name: "date", widget: "datetime" }
-      - { label: "Category", name: "category", widget: "select", options: ["Market Insights", "Equity Research"] }
+      - { label: "Category", name: "category", widget: "select", options: ["Market Insights", "Equity Research", "Trade Ideas"] }
+      - { label: "Summary", name: "summary", widget: "text", hint: "2–3 sentence overview for the homepage" }
       - { label: "Body", name: "body", widget: "markdown" }
