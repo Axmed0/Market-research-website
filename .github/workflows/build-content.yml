@@ -4,9 +4,12 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'content/**'
-      - '.github/workflows/build-content.yml'
+      - "content/**"
+      - ".github/workflows/build-content.yml"
   workflow_dispatch:
+
+permissions:
+  contents: write   # <-- allows the job to commit content.json
 
 jobs:
   build:
@@ -17,62 +20,59 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+
+      - name: Install builder deps
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install gray-matter@4 >/dev/null 2>&1
 
       - name: Build content.json
         run: |
-          mkdir -p tmp
-          cat > tmp/build.js <<'JS'
-          import { promises as fs } from 'fs';
-          import path from 'path';
-
-          const matter = (await import('gray-matter')).default;
+          node - <<'JS'
+          const fs = require('fs').promises;
+          const path = require('path');
+          const matter = require('gray-matter');
 
           async function scan(dir){
-            const out = [];
+            const files = [];
             async function walk(p){
-              const entries = await fs.readdir(p, { withFileTypes: true });
+              let entries = [];
+              try { entries = await fs.readdir(p, { withFileTypes: true }); } catch { return; }
               for (const e of entries){
                 const full = path.join(p, e.name);
                 if (e.isDirectory()) await walk(full);
-                else if (/\.md$/.test(e.name)) out.push(full);
+                else if (/\.md$/i.test(e.name)) files.push(full);
               }
             }
             await walk(dir);
-            return out;
+            return files;
           }
+          const toSlug = s => (s||'')
+            .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 
-          function toSlug(s){
-            return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-          }
-
-          const root = 'content/posts';
-          const files = await scan(root).catch(()=>[]);
-          const posts = [];
-
-          for (const file of files){
-            const raw = await fs.readFile(file, 'utf8');
-            const fm = matter(raw);
-            const fmData = fm.data || {};
-            const body = fm.content?.trim() || '';
-            const title = fmData.title || path.basename(file, '.md');
-            const date = fmData.date || new Date().toISOString();
-            const category = fmData.category || 'Market Insights';
-            const summary = fmData.summary || '';
-            const slug = fmData.slug || toSlug(title);
-
-            posts.push({ title, date, category, summary, slug, body });
-          }
-
-          posts.sort((a,b)=> new Date(b.date) - new Date(a.date));
-
-          await fs.writeFile('content.json', JSON.stringify({ generatedAt: new Date().toISOString(), posts }, null, 2));
-          console.log('Wrote content.json with', posts.length, 'posts');
+          (async () => {
+            const files = await scan('content/posts');
+            const posts = [];
+            for (const f of files){
+              const raw = await fs.readFile(f, 'utf8');
+              const fm = matter(raw);
+              const d = fm.data || {};
+              const post = {
+                title: d.title || 'Untitled',
+                date:  d.date  || new Date().toISOString(),
+                category: d.category || 'Market Insights',
+                summary: d.summary || '',
+                slug:  d.slug || toSlug(d.title || path.basename(f, '.md')),
+                body:  (fm.content || '').trim()
+              };
+              posts.push(post);
+            }
+            posts.sort((a,b)=> new Date(b.date) - new Date(a.date));
+            await fs.writeFile('content.json', JSON.stringify({ generatedAt: new Date().toISOString(), posts }, null, 2));
+            console.log('Wrote content.json with', posts.length, 'posts');
+          })().catch(err => { console.error(err); process.exit(1); });
           JS
-
-          npm init -y >/dev/null 2>&1
-          npm install gray-matter@4 >/dev/null 2>&1
-          node tmp/build.js
 
       - name: Commit content.json
         run: |
