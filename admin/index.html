@@ -4,8 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lumora — Admin</title>
+    <!-- Identity widget must load on /admin so invite/confirm works -->
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <!-- Decap CMS UI -->
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <style>
+      html,body{margin:0;height:100%}
+      .fallback{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:system-ui, Inter, sans-serif}
+      .fallback a{padding:10px 14px;border:1px solid #ddd;border-radius:8px;text-decoration:none;color:#111}
+    </style>
   </head>
-  <body></body>
+  <body>
+    <div id="fallback" class="fallback" style="display:none">
+      <a href="#" id="open-id">Login with Netlify Identity</a>
+    </div>
+
+    <script>
+      // Show clear errors (instead of silent blank)
+      window.addEventListener('error', e => console.error('CMS error:', e.message, e.filename, e.lineno));
+      window.addEventListener('unhandledrejection', e => console.error('CMS promise error:', e.reason));
+
+      // Auto-open Identity if user isn’t logged in
+      function initIdentity() {
+        if (!window.netlifyIdentity) return;
+        window.netlifyIdentity.on('init', user => {
+          if (!user) {
+            document.getElementById('fallback').style.display = 'flex';
+            window.netlifyIdentity.on('login', () => location.reload());
+          }
+        });
+      }
+      document.getElementById('open-id').addEventListener('click', e => {
+        e.preventDefault();
+        window.netlifyIdentity && window.netlifyIdentity.open();
+      });
+      initIdentity();
+    </script>
+  </body>
 </html>
