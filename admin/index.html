@@ -4,16 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lumora — Admin</title>
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.2/auth0-spa-js.production.js"></script>
+
+    <!-- Auth0 SPA SDK (add cache-buster so the browser pulls fresh) -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js?v=2"></script>
     <script>window.CMS_MANUAL_INIT = true;</script>
+
     <style>
       html,body{margin:0;height:100%;font-family:system-ui,Inter,Arial}
-      .wrap{min-height:100%;display:grid;place-items:center}
-      .card{border:1px solid #e6e9f2;border-radius:14px;padding:24px;max-width:420px;width:100%}
+      .wrap{min-height:100%;display:grid;place-items:center;padding:40px}
+      .card{border:1px solid #e6e9f2;border-radius:14px;padding:24px;max-width:440px;width:100%;box-shadow:0 1px 2px rgba(0,0,0,.03)}
       h1{font-size:20px;margin:0 0 12px}
       p{margin:0 0 16px;color:#6b7380}
       button{padding:10px 14px;border:1px solid #e6e9f2;border-radius:10px;background:#0c1116;color:#fff;cursor:pointer}
       .hide{display:none}
+      .err{color:#b00020;margin-top:10px;font-size:14px;white-space:pre-wrap}
     </style>
   </head>
   <body>
@@ -22,38 +26,99 @@
         <h1>Sign in to edit</h1>
         <p>Use your Lumora account to access the editor.</p>
         <button id="login">Sign in</button>
+        <div id="msg" class="err"></div>
       </div>
     </div>
 
     <script>
       (async function () {
-        const domain = "dev-iwnhhq8146ag8pfi.us.auth0.com";     // e.g. dev-abcd1234.us.auth0.com
-        const clientId = "dev-iwnhhq8146ag8pfi.us.auth0.com";
-        const redirectUri = window.location.origin + "/admin/";
+        const DOMAIN    = "dev-iwnhhq8146ag8pfi.us.auth0.com";     // e.g. dev-xxxx.us.auth0.com  (no https://)
+        const CLIENT_ID = "dev-iwnhhq8146ag8pfi.us.auth0.com";
+        const REDIRECT  = window.location.origin + "/admin/";
+        const msg = (t)=>{ const el=document.getElementById('msg'); el.textContent=t||''; console.log('[admin]', t||''); };
 
-        const auth0 = await createAuth0Client({
-          domain, clientId,
-          cacheLocation: "localstorage",
-          useRefreshTokens: true,
-          authorizationParams: { redirect_uri: redirectUri, prompt: "login" }
+        // Manual fallback URL (works even if SDK is blocked)
+        const manualAuthUrl = `https://${DOMAIN}/authorize?client_id=${encodeURIComponent(CLIENT_ID)}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=code&scope=openid%20profile%20email&state=${Math.random().toString(36).slice(2)}`;
+
+        // Attach click immediately – if SDK fails we'll still redirect
+        document.getElementById('login').addEventListener('click', async () => {
+          try {
+            if (!window.createAuth0Client) {
+              msg("Auth0 SDK not loaded; using manual redirect…");
+              window.location.href = manualAuthUrl;
+              return;
+            }
+            // If SDK exists, we'll let the main flow handle it after init
+            if (window.__auth0Login) return window.__auth0Login();
+            msg("Initializing, please try again in a second…");
+          } catch (e) {
+            console.error(e); msg("Login failed: " + (e && e.message ? e.message : e));
+          }
         });
 
-        if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
-          await auth0.handleRedirectCallback();
-          window.history.replaceState({}, document.title, "/admin/");
-        }
-
-        const loggedIn = await auth0.isAuthenticated();
-        if (!loggedIn) {
-          document.getElementById("login").onclick = () => auth0.loginWithRedirect();
+        // Basic misconfig guard
+        if (DOMAIN.includes("YOUR_AUTH0") || CLIENT_ID.includes("YOUR_AUTH0")) {
+          msg("Admin not configured: missing Auth0 Domain/Client ID in /admin/index.html");
           return;
         }
 
-        document.getElementById("gate").classList.add("hide");
-        const cms = document.createElement("script");
-        cms.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js";
-        cms.onload = () => CMS.init();
-        document.head.appendChild(cms);
+        // If SDK is blocked by an extension, manual flow above still works.
+        if (!window.createAuth0Client) {
+          msg("Auth0 SDK failed to load (extension or network?). Click Sign in to use manual redirect.");
+          return;
+        }
+
+        let auth0;
+        try {
+          auth0 = await createAuth0Client({
+            domain: DOMAIN,
+            clientId: CLIENT_ID,
+            cacheLocation: "localstorage",
+            useRefreshTokens: true,
+            authorizationParams: { redirect_uri: REDIRECT }
+          });
+          console.log("[admin] Auth0 initialized");
+        } catch (e) {
+          console.error(e);
+          msg("Failed to initialize Auth0: " + (e && e.message ? e.message : e));
+          return;
+        }
+
+        // Handle the code/state on first return
+        if (location.search.includes("code=") && location.search.includes("state=")) {
+          try {
+            await auth0.handleRedirectCallback();
+            history.replaceState({}, document.title, "/admin/");
+            console.log("[admin] handled login callback");
+          } catch (e) {
+            console.error(e);
+            msg("Login callback error: " + (e && e.message ? e.message : e));
+            return;
+          }
+        }
+
+        // Provide a working click handler once init is done
+        window.__auth0Login = async () => {
+          try {
+            await auth0.loginWithRedirect({ authorizationParams: { redirect_uri: REDIRECT } });
+          } catch (e) {
+            console.error(e);
+            msg("Login failed: " + (e && e.message ? e.message : e));
+          }
+        };
+
+        // If already logged in, load CMS
+        if (await auth0.isAuthenticated()) {
+          document.getElementById("gate").classList.add("hide");
+          const s = document.createElement("script");
+          s.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js?v=2";
+          s.onload = () => { console.log("[admin] CMS loaded"); CMS.init(); };
+          s.onerror = () => msg("Failed to load CMS script.");
+          document.head.appendChild(s);
+          return;
+        }
+
+        msg(""); // clear any message; ready for click
       })();
     </script>
   </body>
