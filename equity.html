@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Market Insights — Lumora</title>
+  <title>Equity Research — Lumora</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
@@ -15,8 +15,8 @@
     <div class="container header-inner">
       <a class="brand" href="./">Lumora</a>
       <nav id="site-nav" class="nav">
-        <a href="market.html" aria-current="page">Market Insights</a>
-        <a href="equity.html">Equity Research</a>
+        <a href="market.html">Market Insights</a>
+        <a href="equity.html" aria-current="page">Equity Research</a>
         <a href="trade.html">Trade Ideas</a>
         <a href="admin/">Write</a>
         <a href="mailto:hello@lumora.co">Contact Us</a>
@@ -27,16 +27,18 @@
 
   <main class="container">
     <div class="section-head with-search">
-      <h1 class="page-title">Market Insights</h1>
-      <input id="page-search" class="search-input" type="search" placeholder="Search Market Insights" />
+      <h1 class="page-title">Equity Research</h1>
+      <input id="page-search" class="search-input" type="search" placeholder="Search Equity Research" />
     </div>
-    <section class="category-section light">
-      <div id="page-list" class="card-grid" aria-live="polite"></div>
+    <section class="list-section">
+      <div id="page-list" class="research-list" aria-live="polite"></div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner"><small>© <span id="year"></span> Lumora.</small></div>
+    <div class="container footer-inner">
+      <small>© <span id="year"></span> Lumora.</small>
+    </div>
   </footer>
 
   <script src="script.js" defer></script>
