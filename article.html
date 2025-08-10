@@ -2,37 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lumora — Article</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <!-- Lightweight Markdown parser -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script defer src="script.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
 </head>
-<body data-page="article">
+<body>
   <header class="site-header">
-    <div class="container">
-      <div class="header-row">
-        <a class="brand" href="index.html" aria-label="Lumora Home">Lumora</a>
-        <nav class="nav"><a class="link" href="index.html">All Articles</a></nav>
-      </div>
+    <div class="container header-inner">
+      <a class="brand" href="/">Lumora</a>
+      <nav>
+        <a class="nav-link" href="mailto:hello@lumora.co">Contact Us</a>
+      </nav>
     </div>
   </header>
 
-  <main class="container">
-    <article class="article">
-      <h1 id="article-title" class="article-title"></h1>
-      <p id="article-meta" class="article-meta"></p>
-      <div id="article-body" class="article-body"></div>
+  <main class="container article-container">
+    <article>
+      <p class="post-meta" id="article-meta"></p>
+      <h1 class="article-title" id="article-title"></h1>
+      <p class="article-summary" id="article-summary"></p>
+      <div id="article-body" class="prose"></div>
     </article>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <small>© <span id="year"></span> Lumora</small>
-    </div>
-  </footer>
+  <!-- Lightweight Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/script.js" defer></script>
 </body>
 </html>

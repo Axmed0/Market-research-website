@@ -1,0 +1,87 @@
+name: Build content.json
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'content/**'
+      - '.github/workflows/build-content.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build content.json
+        run: |
+          mkdir -p tmp
+          cat > tmp/build.js <<'JS'
+          import { promises as fs } from 'fs';
+          import path from 'path';
+
+          const matter = (await import('gray-matter')).default;
+
+          async function scan(dir){
+            const out = [];
+            async function walk(p){
+              const entries = await fs.readdir(p, { withFileTypes: true });
+              for (const e of entries){
+                const full = path.join(p, e.name);
+                if (e.isDirectory()) await walk(full);
+                else if (/\.md$/.test(e.name)) out.push(full);
+              }
+            }
+            await walk(dir);
+            return out;
+          }
+
+          function toSlug(s){
+            return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+          }
+
+          const root = 'content/posts';
+          const files = await scan(root).catch(()=>[]);
+          const posts = [];
+
+          for (const file of files){
+            const raw = await fs.readFile(file, 'utf8');
+            const fm = matter(raw);
+            const fmData = fm.data || {};
+            const body = fm.content?.trim() || '';
+            const title = fmData.title || path.basename(file, '.md');
+            const date = fmData.date || new Date().toISOString();
+            const category = fmData.category || 'Market Insights';
+            const summary = fmData.summary || '';
+            const slug = fmData.slug || toSlug(title);
+
+            posts.push({ title, date, category, summary, slug, body });
+          }
+
+          posts.sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+          await fs.writeFile('content.json', JSON.stringify({ generatedAt: new Date().toISOString(), posts }, null, 2));
+          console.log('Wrote content.json with', posts.length, 'posts');
+          JS
+
+          npm init -y >/dev/null 2>&1
+          npm install gray-matter@4 >/dev/null 2>&1
+          node tmp/build.js
+
+      - name: Commit content.json
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions"
+            git config user.email "actions@users.noreply.github.com"
+            git add content.json
+            git commit -m "Build content.json"
+            git push
+          else
+            echo "No changes to commit."
+          fi
