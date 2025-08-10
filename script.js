@@ -4,7 +4,7 @@
 
   // Utility: fetch content.json (built by CI)
   async function loadContent(){
-    const res = await fetch('/content.json', { cache: 'no-store' });
+    const res = await fetch('content.json', { cache: 'no-store' });
     if (!res.ok) return { posts: [] };
     return await res.json();
   }

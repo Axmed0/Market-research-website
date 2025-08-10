@@ -1,9 +1,5 @@
 backend:
-  name: github
-  branch: main
-  repo: YOUR_GITHUB_USERNAME/YOUR_REPO_NAME
-  # For Netlify Identity + Git Gateway, swap backend to:
-  # name: git-gateway
+  name: git-gateway
 
 media_folder: "static/uploads"      # unused (image-free), kept for CMS compatibility
 public_folder: "/static/uploads"
