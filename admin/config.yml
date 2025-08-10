@@ -1,11 +1,9 @@
 backend:
   name: git-gateway
+branch: main
 
-media_folder: "static/uploads"      # unused (image-free), kept for CMS compatibility
+media_folder: "static/uploads"
 public_folder: "/static/uploads"
-
-site_url: "https://YOUR_DOMAIN"     # update after deploy
-logo_url: ""                         # image-free brand
 
 publish_mode: editorial_workflow
 

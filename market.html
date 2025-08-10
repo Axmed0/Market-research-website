@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-category="Market Insights">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lumora — Article</title>
+  <title>Market Insights — Lumora</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
     <div class="container header-inner">
       <a class="brand" href="./">Lumora</a>
       <nav id="site-nav" class="nav">
-        <a href="market.html">Market Insights</a>
+        <a href="market.html" aria-current="page">Market Insights</a>
         <a href="equity.html">Equity Research</a>
         <a href="trade.html">Trade Ideas</a>
         <a href="admin/">Write</a>
@@ -25,16 +25,20 @@
     </div>
   </header>
 
-  <main class="container article-container">
-    <article>
-      <p class="post-meta" id="article-meta"></p>
-      <h1 class="article-title" id="article-title"></h1>
-      <p class="article-summary" id="article-summary"></p>
-      <div id="article-body" class="prose"></div>
-    </article>
+  <main class="container">
+    <div class="section-head with-search">
+      <h1 class="page-title">Market Insights</h1>
+      <input id="page-search" class="search-input" type="search" placeholder="Search Market Insights" />
+    </div>
+    <section class="category-section light">
+      <div id="page-list" class="card-grid" aria-live="polite"></div>
+    </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <footer class="site-footer">
+    <div class="container footer-inner"><small>© <span id="year"></span> Lumora.</small></div>
+  </footer>
+
   <script src="script.js" defer></script>
 </body>
 </html>

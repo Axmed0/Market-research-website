@@ -7,40 +7,95 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <!-- Netlify Identity widget so invite/confirm flows work on any page -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="./">Lumora</a>
-      <nav>
-        <a class="nav-link" href="admin/">Write</a>
-        <a class="nav-link" href="mailto:hello@lumora.co">Contact Us</a>
+      <nav id="site-nav" class="nav">
+        <a href="market.html">Market Insights</a>
+        <a href="equity.html">Equity Research</a>
+        <a href="trade.html">Trade Ideas</a>
+        <a href="admin/">Write</a>
+        <a href="mailto:hello@lumora.co">Contact Us</a>
       </nav>
+      <button id="menu-toggle" class="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
     </div>
   </header>
 
+  <!-- Hero / Newsletter CTA -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <h1 class="hero-title">Sign up for our free newsletter</h1>
+        <p class="hero-sub">Timely market insights, equity research, and trade ideas—straight to your inbox.</p>
+        <form name="newsletter" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="newsletter">
+          <input type="hidden" name="form-name" value="newsletter">
+          <input type="email" name="email" required placeholder="Your email address" aria-label="Email" />
+          <button type="submit" class="btn-primary">Subscribe</button>
+        </form>
+        <p class="form-note" id="form-note" hidden>Thanks—check your inbox for a confirmation.</p>
+      </div>
+      <div class="hero-search">
+        <label for="global-search" class="sr-only">Search</label>
+        <input id="global-search" class="search-input" type="search" placeholder="Search all articles..." />
+      </div>
+    </div>
+  </section>
+
   <main class="container">
-    <section class="category-section">
-      <h2 class="category-title">Market Insights</h2>
-      <div id="market-insights-list" class="post-list" aria-live="polite"></div>
+    <section class="category-section light">
+      <div class="section-head">
+        <h2 class="category-title">Market Insights</h2>
+        <a class="view-all" href="market.html">View all</a>
+      </div>
+      <div id="market-insights-list" class="card-grid" aria-live="polite"></div>
     </section>
 
-    <section class="category-section">
-      <h2 class="category-title">Equity Research</h2>
-      <div id="equity-research-list" class="post-list" aria-live="polite"></div>
+    <section class="category-section light">
+      <div class="section-head">
+        <h2 class="category-title">Equity Research</h2>
+        <a class="view-all" href="equity.html">View all</a>
+      </div>
+      <div id="equity-research-list" class="card-grid" aria-live="polite"></div>
     </section>
 
-    <section class="category-section">
-      <h2 class="category-title">Trade Ideas</h2>
-      <div id="trade-ideas-list" class="post-list" aria-live="polite"></div>
+    <section class="category-section light">
+      <div class="section-head">
+        <h2 class="category-title">Trade Ideas</h2>
+        <a class="view-all" href="trade.html">View all</a>
+      </div>
+      <div id="trade-ideas-list" class="card-grid" aria-live="polite"></div>
     </section>
   </main>
 
-  <footer class="site-footer container">
-    <small>© <span id="year"></span> Lumora. Independent markets commentary and research.</small>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <small>© <span id="year"></span> Lumora. Independent markets commentary and research.</small>
+      <div class="social">
+        <a aria-label="LinkedIn" href="#" class="ico">"+`<svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM0 8.98h5V24H0V8.98zM8.98 8.98H14v2.05h.07c.7-1.33 2.42-2.73 4.98-2.73 5.33 0 6.32 3.5 6.32 8.05V24h-5v-6.6c0-1.57-.03-3.58-2.18-3.58-2.18 0-2.52 1.7-2.52 3.46V24h-5V8.98z"/></svg>`+"</a>
+        <a aria-label="Twitter" href="#" class="ico">"+`<svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true"><path d="M24 4.56c-.88.4-1.83.67-2.83.79a4.93 4.93 0 0 0 2.16-2.71 9.86 9.86 0 0 1-3.12 1.19 4.92 4.92 0 0 0-8.39 4.49A13.96 13.96 0 0 1 1.67 3.15a4.92 4.92 0 0 0 1.52 6.56 4.9 4.9 0 0 1-2.23-.61v.06a4.92 4.92 0 0 0 3.95 4.82 4.96 4.96 0 0 1-2.22.08 4.93 4.93 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 21.53a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64A10 10 0 0 0 24 4.56z"/></svg>`+"</a>
+        <a aria-label="Facebook" href="#" class="ico">"+`<svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2v-3h2v-2.3c0-2 1.2-3.2 3-3.2.9 0 1.8.17 1.8.17v2h-1c-1 0-1.3.62-1.3 1.26V12h2.2l-.35 3h-1.85v7A10 10 0 0 0 22 12z"/></svg>`+"</a>
+        <a aria-label="YouTube" href="#" class="ico">"+`<svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.2 31.2 0 0 0 0 12a31.2 31.2 0 0 0 .6 5.8 3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1 31.2 31.2 0 0 0 .6-5.8 31.2 31.2 0 0 0-.6-5.8zM9.75 15.5v-7l6 3.5-6 3.5z"/></svg>`+"</a>
+      </div>
+    </div>
   </footer>
 
+  <script>
+    // Accept Netlify Identity invite + redirect back to /admin
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', user => {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('subscribed') === '1') document.getElementById('form-note').hidden = false;
+        if (!user) {
+          window.netlifyIdentity.on('login', () => document.location.href = 'admin/');
+        }
+      });
+    }
+  </script>
   <script src="script.js" defer></script>
 </body>
 </html>
