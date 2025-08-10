@@ -4,41 +4,57 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lumora — Admin</title>
-    <!-- Identity widget must load on /admin so invite/confirm works -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-    <!-- Decap CMS UI -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.2/auth0-spa-js.production.js"></script>
+    <script>window.CMS_MANUAL_INIT = true;</script>
     <style>
-      html,body{margin:0;height:100%}
-      .fallback{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:system-ui, Inter, sans-serif}
-      .fallback a{padding:10px 14px;border:1px solid #ddd;border-radius:8px;text-decoration:none;color:#111}
+      html,body{margin:0;height:100%;font-family:system-ui,Inter,Arial}
+      .wrap{min-height:100%;display:grid;place-items:center}
+      .card{border:1px solid #e6e9f2;border-radius:14px;padding:24px;max-width:420px;width:100%}
+      h1{font-size:20px;margin:0 0 12px}
+      p{margin:0 0 16px;color:#6b7380}
+      button{padding:10px 14px;border:1px solid #e6e9f2;border-radius:10px;background:#0c1116;color:#fff;cursor:pointer}
+      .hide{display:none}
     </style>
   </head>
   <body>
-    <div id="fallback" class="fallback" style="display:none">
-      <a href="#" id="open-id">Login with Netlify Identity</a>
+    <div class="wrap">
+      <div id="gate" class="card">
+        <h1>Sign in to edit</h1>
+        <p>Use your Lumora account to access the editor.</p>
+        <button id="login">Sign in</button>
+      </div>
     </div>
 
     <script>
-      // Show clear errors (instead of silent blank)
-      window.addEventListener('error', e => console.error('CMS error:', e.message, e.filename, e.lineno));
-      window.addEventListener('unhandledrejection', e => console.error('CMS promise error:', e.reason));
+      (async function () {
+        const domain = "YOUR_AUTH0_DOMAIN";     // e.g. dev-abcd1234.us.auth0.com
+        const clientId = "YOUR_AUTH0_CLIENT_ID";
+        const redirectUri = window.location.origin + "/admin/";
 
-      // Auto-open Identity if user isn’t logged in
-      function initIdentity() {
-        if (!window.netlifyIdentity) return;
-        window.netlifyIdentity.on('init', user => {
-          if (!user) {
-            document.getElementById('fallback').style.display = 'flex';
-            window.netlifyIdentity.on('login', () => location.reload());
-          }
+        const auth0 = await createAuth0Client({
+          domain, clientId,
+          cacheLocation: "localstorage",
+          useRefreshTokens: true,
+          authorizationParams: { redirect_uri: redirectUri, prompt: "login" }
         });
-      }
-      document.getElementById('open-id').addEventListener('click', e => {
-        e.preventDefault();
-        window.netlifyIdentity && window.netlifyIdentity.open();
-      });
-      initIdentity();
+
+        if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
+          await auth0.handleRedirectCallback();
+          window.history.replaceState({}, document.title, "/admin/");
+        }
+
+        const loggedIn = await auth0.isAuthenticated();
+        if (!loggedIn) {
+          document.getElementById("login").onclick = () => auth0.loginWithRedirect();
+          return;
+        }
+
+        document.getElementById("gate").classList.add("hide");
+        const cms = document.createElement("script");
+        cms.src = "https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js";
+        cms.onload = () => CMS.init();
+        document.head.appendChild(cms);
+      })();
     </script>
   </body>
 </html>
